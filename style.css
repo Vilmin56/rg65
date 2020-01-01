@@ -1,0 +1,40 @@
+html {
+	height:99%;
+	width:99%;
+}
+body {
+	height:100%;
+	width: 100%;
+	margin: 0px;
+	padding: 0px;
+	
+	color: #33A;
+	font-family: "Libre Franklin", "Helvetica Neue", helvetica, arial, sans-serif;
+	font-weight: 400;
+	font-size: 15px;
+	line-height: 1.6471;
+	vertical-align: baseline;
+ 	margin-top: 0px;
+ 	margin-left: 5px;
+ 	margin-right: 5px;	
+    padding: 0px;
+    text-align:center;
+}
+h4 {
+	margin-top:5px;
+	margin-bottom:10px;
+}
+h5 {
+	font-size: 13px;
+	margin-top:0px;
+	margin-bottom:5px;
+}
+h6 {
+	font-size: 12px;
+	margin-top:5px;
+	margin-bottom:0px;
+}
+table
+{
+	border:1px solid #33A;
+}
