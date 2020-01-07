@@ -7,10 +7,14 @@ var rg65 = function(obj)
 		this.foc = new voile(obj.foc.type, obj.foc.origine, obj.foc.guindant, obj.foc.chute, obj.foc.bordure, obj.foc.laizes, obj.gv.lrg_coutures);
 		this.gv =  new voile(obj.gv.type, obj.gv.origine, obj.gv.guindant, obj.gv.chute, obj.gv.bordure, obj.gv.laizes, obj.gv.lrg_coutures);
 		this.mat = new espar(obj.mat.type, obj.mat.tp);
-		this.tetiere = new espar(obj.tetiere.type, obj.tetiere.tp);
+		if (obj.tetiere != undefined)
+		    this.tetiere = new espar(obj.tetiere.type, obj.tetiere.tp);
+		else
+		    this.tetiere = new espar("tetiere", [{"x":6,"y":860},{"x":-70,"y":860},{"x":-70,"y":865},{"x":6,"y":870}]);
 		this.bome_gv = new espar(obj.bome_gv.type, obj.bome_gv.tp);
 		this.bome_foc = new espar(obj.bome_foc.type, obj.bome_foc.tp);
 		this.coque = new coque(obj.coque.etais, obj.coque.pataras);
+		this.renforts = new renforts();
 	}
 	else
 	{
@@ -23,6 +27,7 @@ var rg65 = function(obj)
 		this.bome_gv = new espar();
 		this.bome_foc = new espar();
 		this.coque = new coque();
+		this.renforts = new renforts();
 	}
 }
 rg65.prototype.pmin = function()
@@ -361,7 +366,7 @@ voile.prototype.export_gcode = function()
 		gcode += lz.export_gcode(true/* mode relatif*/) + "\r\n";
 		gcode += "G90 (mode absolu)\r\n"
 		gcode += "G00 Z5\r\n"; 
-		gcode += "G02 X0Y0\r\n";
+		gcode += "G02 X0Y0Z0\r\n";
 		tgcode.push(gcode);
 	}, this);
     return tgcode;
@@ -417,6 +422,28 @@ espar.prototype.trace = function(axes)
 	axes.line_to(this.tp[0]);	
     axes.ctx.stroke();
 }
+espar.prototype.affiche_coord = function()
+{
+	let html = "<table><tr><th colspan=4>" + this.type.toUpperCase() + "</th></tr>";
+    html += "<tr><th>N°</th><th>X</th><th>Y</th><th></th>";
+ 	for (i = 0; i < this.tp.length; i++)
+	{
+		html += "<tr id=\"dsp_"+ this.type + "_" + i + "\"><td>" + i + "</td><td>" + this.tp[i].x + "</td><td>" + this.tp[i].y 
+		+ "</td><td><a href=\"javascript:modif_coord(\'" + this.type +'\',' + i +")\"><img src=\"images/modifier.png\"></a></td></tr>";
+		html += "<tr id=\"edt_"+ this.type + "_" + i + "\" style=\"display:none\"><td>" + i + "</td><td><input type=text id=\"" + this.type + '_x_' + i + "\" value=" + this.tp[i].x + " size=2></td><td><input type=text id=\"" + this.type +'_y_' + i+ "\" value=" + this.tp[i].y + " size=2>" 
+		+ "</td><td><a href=\"javascript:supprime_coord(\'"+this.type +'\',' + i +")\"><img src=\"images/supprimer.png\"></a>&nbsp;<a href=\"javascript:enregistre_coord_espar(\'" + this.type +"\'," + i +");\">"
+        +"<img src=\"images/fait.png\"></a></tr>";
+	}
+    // Ligne nouvelles coordonnées
+    html += '<tr id="dsp_'+this.type+'_'+n+'"><td colspan=3></td><td><a href="javascript:modif_coord(\''+this.type+'\',' + n + ');"><img src="images/ajouter.png"></a></td></tr>';
+    html += '<tr id="edt_'+this.type+'_'+n+'" style="display:none">';
+    html += '<td><input type="text" id="'+this.type+'_x_'+n+'"  size=2></td>';
+    html += '<td><input type="text" id="'+this.type+'_y_'+n+'"  size=2></td>';
+    html +=  '<td><a href="javascript:enregistre_coord(\''+this.type +'\',' + n + ');"><img src="images/fait.png"></a></td></tr>';
+	html += "</table>";
+	return html;
+
+}
 // Objet coque
 //============
 var coque = function(etais, pataras)
@@ -444,4 +471,45 @@ coque.prototype.trace = function(axes)
 	axes.line_to(new point2d(this.pataras.x, 0));
 	axes.line_to(this.pataras);
 	axes.ctx.stroke();
+}
+
+// Objet renforts
+var renforts = function()
+{
+
+}
+renforts.prototype.export_gcode = function(n, L, lb, le)
+{
+    let gcode ="(Renforts de coins de voile en forme de doigt) \r\n";
+    gcode += "G21 (unité = mm)\r\n";
+    gcode += "G91 (mode relatif)\r\n";
+    gcode += "F1000 \r\n";
+    let l = L - (le / 2);
+    gcode += "G00 Z" + fg(-5) + "\r\n";
+    for (let i = 0; i < (n/2); i++)
+    {
+        // de gauche à droite
+        gcode += "G01 X" + fg(l) + " Y" + fg((lb - le) / 2) + "\r\n";
+        gcode += "G03 Y" + fg(le) + " R" + fg(le / 2) + "\r\n";
+        gcode += "G01 X" + fg(-l) + " Y" + fg((lb - le) / 2) + "\r\n";
+        gcode += "G01 Y" + fg(-lb) + "\r\n";
+        // de droite à gauche
+        gcode += "G00 Z" + fg(5) + "\r\n";
+        gcode += "G00 X" + fg(l + le / 2) + " Y" + fg((lb + le) / 2) + "\r\n";
+        gcode += "G00 Z" + fg(-5) + "\r\n";
+
+        gcode += "G01 X" + fg(-l) + " Y" + fg((lb - le) / 2) + "\r\n";
+        gcode += "G02 Y" + fg(le) + " R" + fg(le / 2) + "\r\n";
+        gcode += "G01 X" + fg(l) + " Y" + fg((lb - le) / 2) + "\r\n";
+        gcode += "G01 Y" + fg(-lb) + "\r\n";
+
+        gcode += "G00 Z" + fg(5) + "\r\n";
+        gcode += "G00 X" + fg(-l - le / 2) + " Y" + fg((lb + le) / 2) + "\r\n";
+        gcode += "G00 Z" + fg(-5) + "\r\n";
+    }
+    // Retour à l'origine
+    gcode += "G01 Y-" + fg(5 * lb) + "\r\n";
+    gcode += "G00 Z0\r\n";
+    
+    return gcode;
 }
